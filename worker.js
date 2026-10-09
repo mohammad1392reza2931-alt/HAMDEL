@@ -3,7 +3,8 @@ export default {
     const cors = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "Authorization, Content-Type",
-      "Access-Control-Allow-Methods": "POST,OPTIONS"
+      "Access-Control-Allow-Methods": "POST,GET,OPTIONS",
+      "Access-Control-Max-Age": "86400"
     };
     if (req.method === "OPTIONS") return new Response(null, { headers: cors });
     if (req.method !== "POST") return new Response("ok", { headers: cors });
