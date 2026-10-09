@@ -17,6 +17,23 @@ export default {
       new Response(JSON.stringify({ error: { message } }),
         { status, headers: { ...cors, "Content-Type": "application/json" } });
 
+    // لیست همه مدل‌های Workers AI حساب
+    if (path.startsWith("/cf-models")) {
+      const acct0 = req.headers.get("X-Account-Id") || cachedAccount || "05e70815918e4f57cd97ca2fe57a816e";
+      const out = [];
+      try {
+        for (let p = 1; p <= 8; p++) {
+          const a = await fetch(`https://api.cloudflare.com/client/v4/accounts/${acct0}/ai/models/search?per_page=100&page=${p}`, { headers: { Authorization: auth } });
+          const j = await a.json();
+          if (!j.success) return err(a.status || 400, (j.errors && j.errors[0] && j.errors[0].message) || "لیست مدل‌ها گرفته نشد");
+          const arr = j.result || [];
+          arr.forEach(m => out.push({ id: m.name, task: m.task && m.task.name }));
+          if (arr.length < 100) break;
+        }
+      } catch (e) { return err(502, "اتصال به API کلودفلیر نشد"); }
+      return new Response(JSON.stringify({ models: out }), { headers: { ...cors, "Content-Type": "application/json" } });
+    }
+
     let target = "https://api.z.ai/api/paas/v4/chat/completions";
     let timeoutMs = 25000;
 
