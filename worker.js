@@ -34,6 +34,29 @@ export default {
       return new Response(JSON.stringify({ models: out }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
 
+    // اجرای مدل‌های غیر چت (ویدیو و ...)
+    if (path.startsWith("/cf-run")) {
+      const acct1 = req.headers.get("X-Account-Id") || cachedAccount || "05e70815918e4f57cd97ca2fe57a816e";
+      let body;
+      try { body = await req.json(); } catch (e) { return err(400, "درخواست نامعتبر"); }
+      if (!body || !body.model) return err(400, "اسم مدل لازمه");
+      const ac1 = new AbortController();
+      const t1 = setTimeout(() => ac1.abort(), 150000);
+      try {
+        const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${acct1}/ai/run/${body.model}`, {
+          method: "POST",
+          signal: ac1.signal,
+          headers: { "Content-Type": "application/json", "Authorization": auth },
+          body: JSON.stringify(body.input || {})
+        });
+        clearTimeout(t1);
+        return new Response(r.body, { status: r.status, headers: { ...cors, "Content-Type": r.headers.get("Content-Type") || "application/json", "Cache-Control": "no-cache" } });
+      } catch (e) {
+        clearTimeout(t1);
+        return err(502, "اتصال به مدل برقرار نشد یا زمانش تموم شد.");
+      }
+    }
+
     let target = "https://api.z.ai/api/paas/v4/chat/completions";
     let timeoutMs = 25000;
 
