@@ -20,10 +20,7 @@ export default {
     let target = "https://api.z.ai/api/paas/v4/chat/completions";
     let timeoutMs = 25000;
 
-    if (path.startsWith("/aval")) {
-      target = "https://api.avalai.ir/v1/chat/completions";
-      timeoutMs = 55000;
-    } else if (path.startsWith("/cf")) {
+    if (path.startsWith("/cf")) {
       timeoutMs = 55000;
       let acct = req.headers.get("X-Account-Id") || cachedAccount;
       if (!acct) {
