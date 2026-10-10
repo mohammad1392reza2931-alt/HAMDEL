@@ -43,11 +43,25 @@ export default {
       const ac1 = new AbortController();
       const t1 = setTimeout(() => ac1.abort(), 150000);
       try {
+        let fbody, hdrs = { "Authorization": auth };
+        if (body.raw && body.raw.data) {
+          // صدای خام (deepgram nova-3 و ...)
+          const bin = atob(body.raw.data); const u8 = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+          fbody = u8; hdrs["Content-Type"] = body.raw.type || "audio/webm";
+        } else if (body.form) {
+          // multipart (مدل‌های flux-2)
+          const fd = new FormData();
+          Object.entries(body.input || {}).forEach(([k, v]) => fd.append(k, String(v)));
+          fbody = fd; // Content-Type با boundary خودکار ست می‌شه
+        } else {
+          fbody = JSON.stringify(body.input || {}); hdrs["Content-Type"] = "application/json";
+        }
         const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${acct1}/ai/run/${body.model}`, {
           method: "POST",
           signal: ac1.signal,
-          headers: { "Content-Type": "application/json", "Authorization": auth },
-          body: JSON.stringify(body.input || {})
+          headers: hdrs,
+          body: fbody
         });
         clearTimeout(t1);
         return new Response(r.body, { status: r.status, headers: { ...cors, "Content-Type": r.headers.get("Content-Type") || "application/json", "Cache-Control": "no-cache" } });
